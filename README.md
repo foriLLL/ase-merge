@@ -40,7 +40,10 @@ The file `runtotal_dataset.py` starts the parent process to prepare the dataset 
 Our model is built upon [CodeT5](https://huggingface.co/Salesforce/codet5-small), and it is defined in the `run_mergegen.py` file. To fine-tune the model, execute the following command:
 
 ```sh
-$ python run_mergegen.py train
+accelerate config
+accelerate launch run_mergegen.py train
+
+# $ python run_mergegen.py train
 ```
 
 <!-- the model will be saved as `best_model.pt`, and the train process will be saved in the folder `OUTPUT`. -->

@@ -5,19 +5,19 @@ import torch.utils.data as data
 import random
 import pickle
 import numpy as np
-import h5py
+# import h5py
 from tqdm import tqdm
 import json
-from scipy import sparse
+# from scipy import sparse
 from transformers import AutoTokenizer
-import javalang
+# import javalang
 from os import listdir
 from os.path import isfile, join
 import json
-import subprocess
+# import subprocess
 import re
 import os
-import copy
+# import copy
 import math
 from transformers import RobertaTokenizer
 model_type = 'Salesforce/codet5-small'
@@ -47,6 +47,8 @@ class Dataset(data.Dataset):
             all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/raw_data'%(total_raw_data_path)))
 
             self.process_data(all_raw_base, all_raw_a, all_raw_b, all_raw_res, data_name)
+        
+        # 读取处理后对应 train/dev/test 的数据
         self.data = pickle.load(open(data_path, "rb"))
 
 
@@ -65,6 +67,7 @@ class Dataset(data.Dataset):
             if len(total_batches) == 0:
                 total_batches = cur_batches
             else:
+                # 这里的每个 i 代表的是 inputs, ouputs
                 for i in range(len(total_batches)):
                     total_batches[i] = np.concatenate([total_batches[i], cur_batches[i]], axis = 0)
 
@@ -108,6 +111,7 @@ class Dataset(data.Dataset):
     
     def __getitem__(self, offset):
         data = []
+        # i 代表的是 inputs, ouputs
         for i in range(len(self.data)):
             if type(self.data[i][offset]) == np.ndarray:
                 data.append(self.data[i][offset])
