@@ -4,3 +4,9 @@ GIT_MERGE_FILES
 __pycache__
 PROCESSED
 back
+RESULTS/
+processed_*.pkl
+train_state
+best_model.pt
+best_acc
+all_index

@@ -218,8 +218,11 @@ def see_results(inputs, outputs, targets):
     outputs = outputs.cpu().numpy()
     targets = targets.cpu().numpy()
 
+    input_strings = []
     output_strings = []
     target_strings = []
+    input_token_len = []
+    ref_token_len = []
     for i in range(len(outputs)):
         beam_output_strings = []
         for j in range(len(outputs[i])):
@@ -230,16 +233,23 @@ def see_results(inputs, outputs, targets):
             output_string = ''.join(output_token).replace(space_token, " ")
             beam_output_strings.append(output_string)
 
-        cur_target = targets[i].tolist()
-        cur_target = cur_target[1:]
+        cur_target = targets[i].tolist()[1:]
+        cur_input = inputs[i].tolist()[1:]
+        if tokenizer.pad_token_id in cur_input:
+            cur_input = cur_input[:cur_input.index(tokenizer.pad_token_id)]
+        input_token_len.append(len(cur_input))
         if tokenizer.eos_token_id in cur_target:
             cur_target = cur_target[:cur_target.index(tokenizer.eos_token_id)] 
+        ref_token_len.append(len(cur_target))
         ref_token = tokenizer.convert_ids_to_tokens(cur_target)
         ref_string = ''.join(ref_token).replace(space_token, " ")
+        input_token = tokenizer.convert_ids_to_tokens(cur_input)
+        input_string = ''.join(input_token).replace(space_token, " ")
 
         output_strings.append(beam_output_strings)
         target_strings.append(ref_string)
-    return output_strings, target_strings
+        input_strings.append(input_string)
+    return input_strings, output_strings, target_strings, input_token_len, ref_token_len
 
 def dev(model, val_loader, epoch, dev_type='train'):
     """
@@ -286,7 +296,7 @@ def dev(model, val_loader, epoch, dev_type='train'):
             
             if dev_type == 'dev':
                 # 将预测结果和参考结果转换为可读文本
-                output_strings, ref_strings = see_results(batch[0], output, batch[1])
+                input_strings, output_strings, ref_strings, input_token_len, ref_token_len = see_results(batch[0], output, batch[1])
                 total_output_strings.extend(output_strings)
                 total_target_strings.extend(ref_strings)
 
@@ -342,6 +352,8 @@ def test_beam(model, test_loader):
     total_target_strings = []
     total_output_tokens = []
     total_target_tokens = []
+    total_input_token_len = []
+    total_ref_token_len = []
 
     for idx, batch in enumerate(tqdm(test_loader)):
         for i in range(len(batch)):
@@ -383,9 +395,12 @@ def test_beam(model, test_loader):
                 total_results = torch.cat((total_results, results.cpu()), dim=0)
                 total_label = torch.cat((total_label, label.cpu()), dim=0)
 
-            output_strings, ref_strings = see_results(batch[0], beam_output, batch[1])
+            input_strings, output_strings, ref_strings, input_token_len, ref_token_len = see_results(batch[0], beam_output, batch[1])
             total_output_strings.extend(output_strings)
             total_target_strings.extend(ref_strings)
+            total_input_strings.extend(input_strings)
+            total_input_token_len.extend(input_token_len)
+            total_ref_token_len.extend(ref_token_len)
         total_data += len(output)
 
     total_results = torch.masked_fill(total_results, total_label == 0, True)
@@ -395,7 +410,7 @@ def test_beam(model, test_loader):
 
     assert total_data == len(test_loader.dataset)
 
-    output_path = 'OUTPUT/test_OUTPUT'
+    output_path = 'OUTPUT/test_withInputs_OUTPUT'
     if not os.path.exists('%s/SUCCEED'%output_path):
         os.makedirs('%s/SUCCEED'%output_path)
         os.makedirs('%s/FAIL'%output_path)
@@ -405,6 +420,10 @@ def test_beam(model, test_loader):
         else:
             p = open('%s/FAIL/%s'%(output_path, test_index[i]), 'w')
 
+        p.write('input token length: %s\n'%total_input_token_len[i])
+        p.write('input:\n%s\n'%total_input_strings[i])
+        p.write('---------------------------------\n')
+        p.write('ref_token_length: %s\n'%total_ref_token_len[i])
         p.write('ref_dataloader:\n%s\n'%total_target_strings[i])
         p.write('---------------------------------\n')
         p.write('output:\n%s\n'%total_output_strings[i])
