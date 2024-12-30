@@ -16,7 +16,8 @@ if __name__ == '__main__':
     total_raw_data_path = 'RAW_DATA'
     
     # 加载原始数据
-    all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/raw_data' % (total_raw_data_path)))
+    # all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/raw_data' % (total_raw_data_path)))
+    all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/graphQL_raw_data_sample_20' % (total_raw_data_path)))
     
     # 获取原始数据的总数
     all_num = len(all_raw_base)

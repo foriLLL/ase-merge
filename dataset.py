@@ -44,7 +44,8 @@ class Dataset(data.Dataset):
 
         if not os.path.exists(data_path):
             total_raw_data_path = 'RAW_DATA'
-            all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/raw_data'%(total_raw_data_path)))
+            # all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/raw_data'%(total_raw_data_path)))
+            all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/graphQL_raw_data_sample_20'%(total_raw_data_path)))
 
             self.process_data(all_raw_base, all_raw_a, all_raw_b, all_raw_res, data_name)
         
@@ -61,7 +62,9 @@ class Dataset(data.Dataset):
         for i in tqdm(range(math.ceil(data_num / each_num))):
             cur_start = i * each_num
             cur_end = min((i + 1) * each_num, data_num)
-            cur_data_path = 'PROCESSED/processed_%s_%s.pkl'%(cur_start, cur_end)
+            # cur_data_path = 'PROCESSED/processed_%s_%s.pkl'%(cur_start, cur_end)
+            # cur_data_path = 'PROCESSED/processed_graphQL_sample_20_%s_%s.pkl'%(cur_start, cur_end)
+            cur_data_path = 'PROCESSED/processed_format_save_graphQL_sample_20_%s_%s.pkl'%(cur_start, cur_end)
             self.ii = i
             cur_batches = pickle.load(open(cur_data_path, 'rb'))
             if len(total_batches) == 0:

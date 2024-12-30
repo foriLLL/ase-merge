@@ -531,6 +531,9 @@ def main_test():
     exactly_match_num, exactly_match_ids, total_test_output = test_beam(model, test_loader)
 
     json.dump(total_test_output, open('OUTPUT/total_gen_output_test_beam.json', 'w'))
+    # make sure RESULTS folder exists
+    if not os.path.exists('RESULTS'):
+        os.makedirs('RESULTS')
     json.dump(exactly_match_ids, open('RESULTS/test_gen_exactly_match_ids', 'w'))
 
     f.write('test_exactly_match %s out of %s\n'%(exactly_match_num, len(test_loader.dataset)))

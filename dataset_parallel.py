@@ -73,12 +73,12 @@ class Dataset(data.Dataset):
             os.mkdir('PROCESSED')
         
         # 处理后的数据保存路径
-        self.data_path = 'PROCESSED/processed_%s_%s.pkl' % (self.start, self.end)
+        self.data_path = 'PROCESSED/processed_format_save_graphQL_sample_20_%s_%s.pkl' % (self.start, self.end)
 
         # 原始数据所在路径
         total_raw_data_path = 'RAW_DATA'
         # 从JSON中加载原始数据（base、a、b分支代码及最终resolve结果）
-        all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/raw_data' % (total_raw_data_path)))
+        all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/graphQL_raw_data_sample_20' % (total_raw_data_path)))
         
         # 对原始数据进行处理
         self.process_data(all_raw_base, all_raw_a, all_raw_b, all_raw_res)
@@ -103,10 +103,11 @@ class Dataset(data.Dataset):
             raw_res = all_raw_res[i]
 
             # 对原始字符串进行简单清洗（多余空格）
-            raw_base = ' '.join(raw_base.split())
-            raw_a = ' '.join(raw_a.split())
-            raw_b = ' '.join(raw_b.split())
-            raw_res = ' '.join(raw_res.split())
+            # TODO：如果保留格式呢？
+            # raw_base = ' '.join(raw_base.split())
+            # raw_a = ' '.join(raw_a.split())
+            # raw_b = ' '.join(raw_b.split())
+            # raw_res = ' '.join(raw_res.split())
 
             # 利用分词器对各版本代码进行分词
             tokens_base = self.tokenizer.tokenize(raw_base)
