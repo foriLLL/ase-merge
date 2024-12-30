@@ -56,7 +56,7 @@ class Dataset(data.Dataset):
     """
     自定义数据集类，用于处理合并冲突文件数据并准备训练所需要的张量输入
     """
-    def __init__(self, args, tokenizer, process_start, process_end):
+    def __init__(self, args, tokenizer, process_start, process_end, dump=True):
         # 最大冲突长度与最大解决长度设定（来自args）
         self.max_conflict_length = args.max_conflict_length
         self.max_resolve_length = args.max_resolve_length
@@ -81,9 +81,9 @@ class Dataset(data.Dataset):
         all_raw_base, all_raw_a, all_raw_b, all_raw_res = json.load(open('%s/graphQL_raw_data_sample_20' % (total_raw_data_path)))
         
         # 对原始数据进行处理
-        self.process_data(all_raw_base, all_raw_a, all_raw_b, all_raw_res)
+        self.process_data(all_raw_base, all_raw_a, all_raw_b, all_raw_res, dump=dump)
 
-    def process_data(self, all_raw_base, all_raw_a, all_raw_b, all_raw_res):
+    def process_data(self, all_raw_base, all_raw_a, all_raw_b, all_raw_res, dump=True):
         """
         将原始数据tokenize、对齐、padding并保存为pickle文件。
         """
@@ -92,6 +92,9 @@ class Dataset(data.Dataset):
         max_resolve_length = 0
         inputs = []
         outputs = []
+        both_overflows = 0
+        only_res_overflows = 0
+        only_input_overflows = 0
 
         # 遍历指定数据片段范围内的数据
         for i in tqdm(range(self.start, self.end)):
@@ -103,7 +106,7 @@ class Dataset(data.Dataset):
             raw_res = all_raw_res[i]
 
             # 对原始字符串进行简单清洗（多余空格）
-            # TODO：如果保留格式呢？
+            # 保留格式
             # raw_base = ' '.join(raw_base.split())
             # raw_a = ' '.join(raw_a.split())
             # raw_b = ' '.join(raw_b.split())
@@ -118,6 +121,7 @@ class Dataset(data.Dataset):
             # 将三个版本（base、a、b）的token通过git_merge方法合并得到合并冲突表示的token序列
             tokens_input = self.git_merge(tokens_base, tokens_a, tokens_b)
 
+
             # 将tokens转为对应的ids
             ids_input = self.tokenizer.convert_tokens_to_ids(tokens_input)
             ids_res = self.tokenizer.convert_tokens_to_ids(tokens_res)
@@ -129,6 +133,14 @@ class Dataset(data.Dataset):
             # 更新当前数据集中最大长度统计
             max_conflict_length = max(max_conflict_length, len(cur_input))
             max_resolve_length = max(max_resolve_length, len(cur_output))
+            
+            if len(tokens_input) > self.max_conflict_length and len(cur_output) > self.max_resolve_length:
+                both_overflows += 1
+            elif len(tokens_input) > self.max_conflict_length:
+                only_input_overflows += 1
+            elif len(cur_output) > self.max_resolve_length:
+                only_res_overflows += 1
+
 
             # 对输入与输出进行padding到设定的最大长度
             cur_input = self.pad_length(cur_input, self.max_conflict_length, self.tokenizer.pad_token_id)
@@ -136,11 +148,17 @@ class Dataset(data.Dataset):
             inputs.append(cur_input)
             outputs.append(cur_output)
   
-        # 打印最大序列长度信息
-        print('max_conflict_length, max_resolve_length', max_conflict_length, max_resolve_length)
-        print('all data num:%d remaining num:%d' % (data_num, len(inputs)))
         # 确保处理数据数量与期望一致
         assert data_num == len(inputs)
+        if not dump:
+            # 打印最大序列长度信息
+            print(json.dumps({
+                'both_overflows': both_overflows,
+                'only_input_overflows': only_input_overflows,
+                'only_res_overflows': only_res_overflows,
+                'data_num': data_num
+            }))
+            return
 
         data_num = len(inputs)
         # 将处理好的数据打包
@@ -259,5 +277,10 @@ if __name__ == '__main__':
     # 主执行入口，根据命令行参数获取处理数据的起始与结束索引
     process_start = int(sys.argv[1])
     process_end = int(sys.argv[2])
+    dump = True
+    if len(sys.argv) > 3:
+        dump = sys.argv[3].lower() == 'true'
+    else:
+        dump = True  # 默认值
     # 实例化Dataset类进行数据处理
-    dataset = Dataset(args, tokenizer, process_start, process_end)
+    dataset = Dataset(args, tokenizer, process_start, process_end, dump=dump)

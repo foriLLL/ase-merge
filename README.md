@@ -32,6 +32,10 @@ $ python runtotal_dataset.py dataset_parallel.py
 
 The file `runtotal_dataset.py` starts the parent process to prepare the dataset parallelly and assigns the sub-tasks to different subprocesses. The file `dataset_parallel.py` is the program executed in the subprocesses and used to prepare the dataset. The processed split dataset will be stored in the folder `PROCESSED`.
 
+统计超出 token_len，（太长被 ase-merge 过滤的数据）：
+```sh
+$ python count_overflow.py dataset_parallel.py
+```
 
 
 ## **Model**
